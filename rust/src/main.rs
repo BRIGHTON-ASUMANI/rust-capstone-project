@@ -135,7 +135,28 @@ fn main() -> bitcoincore_rpc::Result<()> {
     // Step 5: Send 20 BTC from Miner wallet to Trader's wallet
     println!("\n=== Step 5: Sending Transaction ===");
     let send_amount = Amount::from_btc(20.0)?;
-    let txid = miner_wallet.send_to_address(&trader_address, send_amount, None, None, None, None, None, None)?;
+    
+    // Use the generic call method to avoid type issues
+    let args = [
+        json!(format!("{:?}", trader_address)),
+        json!(send_amount.to_btc()),
+        json!(""),
+        json!(""),
+        json!(false),
+        json!(false),
+        json!(6),
+        json!("UNSET"),
+        json!(false),
+        json!(null)
+    ];
+    
+    #[derive(Deserialize)]
+    struct SendToAddressResult {
+        txid: String,
+    }
+    
+    let send_result = miner_wallet.call::<SendToAddressResult>("sendtoaddress", &args)?;
+    let txid = send_result.txid;
     println!("Transaction sent! TXID: {}", txid);
 
     // Step 6: Fetch the unconfirmed transaction from the node's mempool
