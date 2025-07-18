@@ -1,6 +1,6 @@
 #![allow(unused)]
 use bitcoin::hex::DisplayHex;
-use bitcoincore_rpc::bitcoin::{Amount, Address};
+use bitcoincore_rpc::bitcoin::Amount;
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use serde::Deserialize;
 use serde_json::json;
@@ -221,4 +221,4 @@ fn main() -> bitcoincore_rpc::Result<()> {
 
     println!("\n=== Project Completed Successfully! ===");
     Ok(())
-}
+} 
