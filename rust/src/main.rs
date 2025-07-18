@@ -45,8 +45,25 @@ fn create_or_load_wallet(rpc: &Client, wallet_name: &str) -> bitcoincore_rpc::Re
         Err(_) => {
             // If loading fails, try to create the wallet
             println!("Creating new wallet '{}'", wallet_name);
-            rpc.create_wallet(wallet_name, None, None, None, None)?;
-            Ok(())
+            match rpc.create_wallet(wallet_name, None, None, None, None) {
+                Ok(_) => {
+                    println!("Wallet '{}' created successfully", wallet_name);
+                    Ok(())
+                }
+                Err(e) => {
+                    // If creation fails, try to load again (in case it was created between attempts)
+                    match rpc.load_wallet(wallet_name) {
+                        Ok(_) => {
+                            println!("Wallet '{}' loaded successfully after creation attempt", wallet_name);
+                            Ok(())
+                        }
+                        Err(_) => {
+                            // If both creation and loading fail, return the original error
+                            Err(e)
+                        }
+                    }
+                }
+            }
         }
     }
 }
