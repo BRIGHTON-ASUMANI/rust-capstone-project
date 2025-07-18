@@ -175,13 +175,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
         json!(null)
     ];
     
-    #[derive(Deserialize)]
-    struct SendToAddressResult {
-        txid: String,
-    }
-    
-    let send_result = miner_wallet.call::<SendToAddressResult>("sendtoaddress", &args)?;
-    let txid = send_result.txid;
+    let txid = miner_wallet.call::<String>("sendtoaddress", &args)?;
     println!("Transaction sent! TXID: {}", txid);
 
     // Step 6: Fetch the unconfirmed transaction from the node's mempool
