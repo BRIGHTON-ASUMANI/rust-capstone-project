@@ -113,19 +113,15 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let mut blocks_mined = 0;
     let mut miner_balance = miner_wallet.get_balance(None, None)?;
     
-    while miner_balance <= Amount::ZERO {
-        blocks_mined += 1;
-        println!("Mining block {}...", blocks_mined);
-        mine_blocks_to_address(&rpc, &mining_address.to_string(), 1)?;
-        
-        // Wait a moment for the block to be processed
-        std::thread::sleep(std::time::Duration::from_millis(100));
-        
-        miner_balance = miner_wallet.get_balance(None, None)?;
-        println!("Current balance: {} BTC", miner_balance.to_btc());
-    }
+    // In regtest mode, we need to mine 101 blocks to make the first block reward spendable
+    // (100 confirmations + 1 block to confirm the transaction)
+    println!("Mining 101 blocks to make block rewards spendable...");
+    mine_blocks_to_address(&rpc, &mining_address.to_string(), 101)?;
     
-    println!("It took {} blocks to get a positive balance", blocks_mined);
+    // Wait a moment for blocks to be processed
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    
+    miner_balance = miner_wallet.get_balance(None, None)?;
     println!("Final Miner balance: {} BTC", miner_balance.to_btc());
     
     // Comment about why wallet balance for block rewards behaves this way
@@ -173,18 +169,26 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let mut miner_change_amount = String::new();
     let mut transaction_fees = String::new();
     
+    // Find the change output (the one that's not the trader's address)
     for output in vout {
-        let address = output["scriptPubKey"]["addresses"][0].as_str().unwrap_or("");
-        let amount = output["value"].as_f64().unwrap_or(0.0);
-        
-        if address != trader_output_address && address != "" {
-            miner_change_address = address.to_string();
-            miner_change_amount = format!("{:.7}", amount);
+        if let Some(addresses) = output["scriptPubKey"]["addresses"].as_array() {
+            if let Some(address) = addresses[0].as_str() {
+                let amount = output["value"].as_f64().unwrap_or(0.0);
+                
+                if address != trader_output_address {
+                    miner_change_address = address.to_string();
+                    miner_change_amount = format!("{:.7}", amount);
+                    break;
+                }
+            }
         }
     }
     
     // Calculate transaction fees (input amount - output amounts)
-    let fee = 50.0 - 20.0 - miner_change_amount.parse::<f64>().unwrap_or(0.0);
+    let input_amount = 50.0; // Block reward amount
+    let output_amount = 20.0; // Amount sent to trader
+    let change_amount = miner_change_amount.parse::<f64>().unwrap_or(0.0);
+    let fee = input_amount - output_amount - change_amount;
     transaction_fees = format!("{:.7}", fee);
     
     // Get block height and hash
