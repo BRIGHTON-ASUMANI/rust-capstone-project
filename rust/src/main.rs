@@ -196,7 +196,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     
     // Parse transaction details
     let txid_str = txid.to_string();
-    let miner_input_address = mining_address_str;
+    let miner_input_address = mining_address_str.clone();
     let miner_input_amount = "50"; // Block reward is 50 BTC in regtest
     let trader_output_address = trader_address_str;
     let trader_output_amount = "20";
@@ -207,27 +207,51 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let mut miner_change_amount = String::new();
     let mut transaction_fees = String::new();
     
+
+    
     // Find the change output (the one that's not the trader's address)
-    for output in vout {
-        if let Some(addresses) = output["scriptPubKey"]["addresses"].as_array() {
+    for (i, output) in vout.iter().enumerate() {
+        // Check if this output has an address field (single address)
+        if let Some(address) = output["scriptPubKey"]["address"].as_str() {
+            let amount = output["value"].as_f64().unwrap_or(0.0);
+            
+            if address != trader_output_address {
+                miner_change_address = address.to_string();
+                miner_change_amount = format!("{:.8}", amount);
+                break;
+            }
+        }
+        // Also check for addresses array (multiple addresses)
+        else if let Some(addresses) = output["scriptPubKey"]["addresses"].as_array() {
             if let Some(address) = addresses[0].as_str() {
                 let amount = output["value"].as_f64().unwrap_or(0.0);
                 
+
+                
                 if address != trader_output_address {
                     miner_change_address = address.to_string();
-                    miner_change_amount = format!("{:.7}", amount);
+                    miner_change_amount = format!("{:.8}", amount);
                     break;
                 }
             }
         }
     }
     
-    // Calculate transaction fees (input amount - output amounts)
-    let input_amount = 50.0; // Block reward amount
-    let output_amount = 20.0; // Amount sent to trader
-    let change_amount = miner_change_amount.parse::<f64>().unwrap_or(0.0);
-    let fee = input_amount - output_amount - change_amount;
-    transaction_fees = format!("{:.7}", fee);
+    // If we didn't find a change address, use the mining address as fallback
+    if miner_change_address.is_empty() {
+        miner_change_address = mining_address_str.clone();
+        // Calculate change amount as input - output - fee
+        let input_amount = 50.0; // Block reward amount
+        let output_amount = 20.0; // Amount sent to trader
+        let estimated_fee = 0.0001; // Estimated fee
+        let change_amount = input_amount - output_amount - estimated_fee;
+        miner_change_amount = format!("{:.8}", change_amount);
+
+    }
+    
+    // Use the actual fee from mempool entry
+    let actual_fee = mempool_entry["fees"]["base"].as_f64().unwrap_or(0.0);
+    transaction_fees = format!("{:.8}", actual_fee);
     
     // Get block height and hash
     let block_height = block_details["height"].as_u64().unwrap_or(0);

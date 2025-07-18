@@ -10,5 +10,6 @@ const config: Config.InitialOptions = {
         '^.+\\.(t|j)s$': 'ts-jest',
     },
     testEnvironment: 'node',
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 };
 export default config;
