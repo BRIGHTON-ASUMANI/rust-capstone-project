@@ -110,8 +110,6 @@ fn main() -> bitcoincore_rpc::Result<()> {
 
     // Step 3: Mine new blocks to this address until positive wallet balance
     println!("\n=== Step 3: Mining Blocks for Balance ===");
-    let mut blocks_mined = 0;
-    let mut miner_balance = miner_wallet.get_balance(None, None)?;
     
     // In regtest mode, we need to mine 101 blocks to make the first block reward spendable
     // (100 confirmations + 1 block to confirm the transaction)
@@ -121,7 +119,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     // Wait a moment for blocks to be processed
     std::thread::sleep(std::time::Duration::from_millis(500));
     
-    miner_balance = miner_wallet.get_balance(None, None)?;
+    let miner_balance = miner_wallet.get_balance(None, None)?;
     println!("Final Miner balance: {} BTC", miner_balance.to_btc());
     
     // Comment about why wallet balance for block rewards behaves this way
