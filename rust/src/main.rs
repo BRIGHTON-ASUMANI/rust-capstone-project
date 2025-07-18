@@ -131,7 +131,10 @@ fn main() -> bitcoincore_rpc::Result<()> {
     // In regtest mode, we need to mine 101 blocks to make the first block reward spendable
     // (100 confirmations + 1 block to confirm the transaction)
     println!("Mining 101 blocks to make block rewards spendable...");
-    let mining_address_str = format!("{:?}", mining_address).trim_matches('"').to_string();
+    let mining_address_str = format!("{:?}", mining_address)
+        .trim_start_matches("Address<NetworkUnchecked>(")
+        .trim_end_matches(')')
+        .to_string();
     mine_blocks_to_address(&rpc, &mining_address_str, 101)?;
     
     // Wait a moment for blocks to be processed
@@ -155,7 +158,10 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let send_amount = Amount::from_btc(20.0)?;
     
     // Use the generic call method to avoid type issues
-    let trader_address_str = format!("{:?}", trader_address).trim_matches('"').to_string();
+    let trader_address_str = format!("{:?}", trader_address)
+        .trim_start_matches("Address<NetworkUnchecked>(")
+        .trim_end_matches(')')
+        .to_string();
     let args = [
         json!(trader_address_str),
         json!(send_amount.to_btc()),
