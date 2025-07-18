@@ -106,7 +106,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     println!("\n=== Step 2: Generating Mining Address ===");
     let miner_wallet = get_wallet_client("Miner")?;
     let mining_address = miner_wallet.get_new_address(Some("Mining Reward"), None)?;
-    println!("Mining address generated: {}", mining_address);
+    println!("Mining address generated: {:?}", mining_address);
 
     // Step 3: Mine new blocks to this address until positive wallet balance
     println!("\n=== Step 3: Mining Blocks for Balance ===");
@@ -132,7 +132,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     println!("\n=== Step 4: Generating Trader Address ===");
     let trader_wallet = get_wallet_client("Trader")?;
     let trader_address = trader_wallet.get_new_address(Some("Received"), None)?;
-    println!("Trader address generated: {}", trader_address);
+    println!("Trader address generated: {:?}", trader_address);
 
     // Step 5: Send 20 BTC from Miner wallet to Trader's wallet
     println!("\n=== Step 5: Sending Transaction ===");
@@ -142,7 +142,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
 
     // Step 6: Fetch the unconfirmed transaction from the node's mempool
     println!("\n=== Step 6: Checking Mempool ===");
-    let mempool_entry = get_mempool_entry(&rpc, &txid)?;
+    let mempool_entry = get_mempool_entry(&rpc, &txid.to_string())?;
     println!("Mempool entry: {}", serde_json::to_string_pretty(&mempool_entry)?);
 
     // Step 7: Confirm the transaction by mining 1 block
@@ -153,7 +153,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
 
     // Step 8: Extract all required transaction details
     println!("\n=== Step 8: Extracting Transaction Details ===");
-    let tx_details = get_transaction_details(&rpc, &txid)?;
+    let tx_details = get_transaction_details(&rpc, &txid.to_string())?;
     let block_details = get_block_details(&rpc, confirmation_block_hash)?;
     
     // Parse transaction details
