@@ -114,7 +114,8 @@ fn main() -> bitcoincore_rpc::Result<()> {
     // In regtest mode, we need to mine 101 blocks to make the first block reward spendable
     // (100 confirmations + 1 block to confirm the transaction)
     println!("Mining 101 blocks to make block rewards spendable...");
-    mine_blocks_to_address(&rpc, &format!("{:?}", mining_address), 101)?;
+    let mining_address_str = format!("{:?}", mining_address).trim_matches('"').to_string();
+    mine_blocks_to_address(&rpc, &mining_address_str, 101)?;
     
     // Wait a moment for blocks to be processed
     std::thread::sleep(std::time::Duration::from_millis(500));
@@ -137,8 +138,9 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let send_amount = Amount::from_btc(20.0)?;
     
     // Use the generic call method to avoid type issues
+    let trader_address_str = format!("{:?}", trader_address).trim_matches('"').to_string();
     let args = [
-        json!(format!("{:?}", trader_address)),
+        json!(trader_address_str),
         json!(send_amount.to_btc()),
         json!(""),
         json!(""),
@@ -166,7 +168,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
 
     // Step 7: Confirm the transaction by mining 1 block
     println!("\n=== Step 7: Confirming Transaction ===");
-    let block_hashes = mine_blocks_to_address(&rpc, &format!("{:?}", mining_address), 1)?;
+    let block_hashes = mine_blocks_to_address(&rpc, &mining_address_str, 1)?;
     let confirmation_block_hash = &block_hashes[0];
     println!("Transaction confirmed in block: {}", confirmation_block_hash);
 
@@ -177,9 +179,9 @@ fn main() -> bitcoincore_rpc::Result<()> {
     
     // Parse transaction details
     let txid_str = txid.to_string();
-    let miner_input_address = format!("{:?}", mining_address);
+    let miner_input_address = mining_address_str;
     let miner_input_amount = "50"; // Block reward is 50 BTC in regtest
-    let trader_output_address = format!("{:?}", trader_address);
+    let trader_output_address = trader_address_str;
     let trader_output_amount = "20";
     
     // Extract change address and amount from transaction details
